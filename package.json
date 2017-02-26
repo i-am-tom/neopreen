@@ -1,0 +1,26 @@
+{
+  "name": "neopreen",
+  "version": "0.1.0",
+  "description": "A set of functions for formatting `neo4j-driver` results.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/i-am-tom/neopreen.git"
+  },
+  "keywords": [
+    "neo4j",
+    "format"
+  ],
+  "author": "Tom Harding <tomjharding@live.co.uk> (http://tjh.io/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/i-am-tom/neopreen/issues"
+  },
+  "homepage": "https://github.com/i-am-tom/neopreen#readme",
+  "devDependencies": {
+    "neo4j-driver": "^1.1.1"
+  }
+}
