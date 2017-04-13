@@ -13,13 +13,17 @@ exports.node = struct => ({ identity, labels, properties }) =>
   Object.assign({}, format(struct, properties), {
     $id: identity.toNumber(), $labels: labels })
 
-// Given a relationship, format it to the particular style.
-exports.relationship = structure => result =>
+// Given a relation, format it to the particular style.
+exports.relation = structure => result =>
   Object.assign({}, format(structure, result.properties)
                   , { $from: result.start.toNumber()
                     , $id:   result.identity.toNumber()
                     , $to:   result.end.toNumber()
                     , $type: result.type })
+
+// Format a record. Useful for the stream API.
+exports.record = structure => record =>
+  format(structure, record.toObject())
 
 // Return a single record from a result.
 exports.one = structure => result =>
@@ -27,8 +31,11 @@ exports.one = structure => result =>
 
 // Return many records from a result.
 exports.many = structure => ({ records }) =>
-  records.map(record => format(
-    structure, record.toObject()))
+  records.map(exports.record(structure))
+
+// Return a single dictionary from a result.
+exports.row = structure => result =>
+  exports.many(structure)(result)[0]
 
 // Return a node from each record within a result.
 exports.column = structure => ({ records }) =>
@@ -40,11 +47,19 @@ exports.column = structure => ({ records }) =>
 // Convert a Neo4j integer.
 exports.int = x => x.toNumber()
 
-// "Convert" a Neo4j real.
-exports.real = x => +x
+// "Convert" a Neo4j float.
+exports.float = x => +x
 
 // "Convert" a Neo4j string.
 exports.string = x => '' + x
 
 // "Convert" a Neo4j bool.
 exports.bool = x => !!x
+
+// Apply a type to a Neo4j array.
+exports.array = type => xs => xs.map(type)
+
+// Apply a structure to a Neo4j object.
+// We can just reuse `format`!
+exports.object = structure => strMap =>
+  format(structure, strMap)

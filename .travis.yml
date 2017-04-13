@@ -8,5 +8,15 @@ before_script:
   - echo 'deb http://debian.neo4j.org/repo stable/' | sudo tee -a    - /etc/apt/sources.list.d/neo4j.list > /dev/null
   - sudo apt-get update && sudo apt-get install neo4j
   - sleep 10
+  - "curl -H \"Content-Type: application/json\" -X POST -d '{\"password\":\"password\"}' -u neo4j:neo4j http://localhost:7474/user/neo4j/password"
 node_js:
+  - "7.0.0"
+  - "7.1.0"
+  - "7.2.0"
+  - "7.3.0"
+  - "7.4.0"
+  - "7.5.0"
   - "7.6.0"
+  - "7.7.0"
+  - "7.8.0"
+  - "7.9.0"
