@@ -5,75 +5,108 @@ const np = require('.')
 
 const conn = driver(
   'bolt://localhost',
-  basic('neo4j', 'neo4j'))
+  basic('neo4j', 'password'))
 
 const sess = conn.session()
 
-sess.run(` RETURN 1`)
-    .then(console.log.bind(console))
-    .catch(x => {console.error(x); process.exit(1)})
-    .then(_ => sess.close())
-    .then(_ => conn.close())
+Promise.all([
+    Promise.all([
+      // NODE
+      sess.run(` CREATE (n:NP_NODE_TEST { x: 1 })
+                 RETURN n`)
+          .then(np.one(np.node({ x: np.int })))
+          .then(n => {
+            assert.deepEqual(n.x, 1, 'Node value')
+            assert.ok(n.$id === n.$id | 0, 'Node meta')
 
-// INT
+            assert.deepEqual(
+              n.$labels,
+              ['NP_NODE_TEST'],
+              'Node labels')
+          }),
 
-assert.strictEqual(
-  np.int(int(5))
-  , 5
-  , 'Neo4jInt -> Int')
+      // NODE
+      sess.run(` CREATE (n:NP_NODE_TEST { x: 2 })
+                 CREATE (n)-[r:NP_REL_TEST { y: 321 }]->(n)
+                 RETURN r`)
+          .then(np.one(np.relationship({ y: np.int })))
+          .then(n => {
+            assert.equal(n.$to, n.$from, 'Relation ends')
+            assert.equal(n.$type, 'NP_REL_TEST')
+            assert.ok(n.$id === n.$id | 0, 'Node meta')
+          })
+      ])
+      .then(_ => sess.run(` MATCH (n:NP_NODE_TEST)
+                            MATCH ()-[r:NP_REL_TEST]-()
+                            DELETE n DELETE r `)),
 
-// REAL
+    // ONE
+    sess.run('RETURN 123 AS x')
+        .then(np.one(np.int))
+        .then(i => assert.equal(
+            i, 123, 'One')),
 
-assert.strictEqual(
-  np.real(false)
-  , 0.0
-  , 'Bool -> Real')
+    // MANY
+    sess.run(` UNWIND [1, 2, 3] AS num
+               RETURN num + 1 AS x
+                    , num - 1 AS y `)
+        .then(np.many({ x: np.int, y: np.int }))
+        .then(i => assert.deepEqual(
+          i, [ { x: 2, y: 0 }
+             , { x: 3, y: 1 }
+             , { x: 4, y: 2 } ],
+          'Many')),
 
-assert.strictEqual(
-  np.real('1.5'),
-  1.5,
-  'String -> Real')
+    // MANY
+    sess.run('RETURN 123 AS x')
+        .then(np.one(np.int))
+        .then(i => assert.equal(
+            i, 123, 'One')),
 
-assert.strictEqual(
-  np.real(1.0),
-  1.0,
-  'Real -> Real')
+    // COLUMN
+    sess.run(`UNWIND [5, 2, 4, 1]
+                  AS number
+              RETURN number`)
+        .then(np.column(np.int))
+        .then(indices =>
+          assert.deepStrictEqual(
+            indices, [5, 2, 4, 1],
+            'np.column')),
 
-// STRING
+    // PRIMITIVES
+    sess.run(`RETURN 5 AS x`)
+        .then(({ records: [i] }) =>
+          assert.strictEqual(
+            np.int(i.toObject().x),
+            5,
+            'Int')),
 
-assert.strictEqual(
-  np.string(1),
-  '1',
-  'Number -> String')
+    // REAL
+    sess.run(`RETURN 0.0 AS x`)
+        .then(({ records: [i] }) =>
+          assert.deepEqual(
+            i.toObject().x,
+            0.0,
+            'Real')),
 
-assert.strictEqual(
-  np.string(true),
-  'true',
-  'Bool -> String')
+    // STRING
+    sess.run(`RETURN "hello" AS x`)
+        .then(({ records: [i] }) =>
+          assert.deepEqual(
+            i.toObject().x,
+            'hello',
+            'String')),
 
-assert.strictEqual(
-  np.string({}),
-  '[object Object]',
-  'Object -> String')
-
-// BOOL
-
-assert.strictEqual(
-  np.bool('false'),
-  true,
-  'String -> Bool')
-
-assert.strictEqual(
-  np.bool(0),
-  false,
-  'Int -> Bool')
-
-assert.strictEqual(
-  np.bool(1.1),
-  true,
-  'Float -> Bool')
-
-assert.strictEqual(
-  np.bool(false),
-  false,
-  'Bool -> Bool')
+    // BOOL
+    sess.run(`RETURN true AS x`)
+        .then(({ records: [i] }) =>
+          assert.ok(
+            i.toObject().x,
+            'Bool'))
+  ])
+  .then(_ => sess.close())
+  .then(_ => conn.close())
+  .catch(e => {
+    console.error(e)
+    process.exit(1)
+  })

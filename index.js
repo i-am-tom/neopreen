@@ -13,28 +13,26 @@ exports.node = struct => ({ identity, labels, properties }) =>
   Object.assign({}, format(struct, properties), {
     $id: identity.toNumber(), $labels: labels })
 
-// Given a record, format its contents according to a given structure.
-exports.record = struct => data => format(struct, data.toObject())
-
 // Given a relationship, format it to the particular style.
-exports.relationship = ({ identity, start, end, type, properties }) =>
-  Object.assign({}, properties
-                  , { $type: type
-                    , $to: end.toNumber()
-                    , $from: start.toNumber()
-                    , $id: identity.toNumber() })
+exports.relationship = structure => result =>
+  Object.assign({}, format(structure, result.properties)
+                  , { $from: result.start.toNumber()
+                    , $id:   result.identity.toNumber()
+                    , $to:   result.end.toNumber()
+                    , $type: result.type })
 
 // Return a single record from a result.
-exports.one = structure => ({ records }) =>
-  format(structure, records[0])
+exports.one = structure => result =>
+  exports.column(structure)(result)[0]
 
 // Return many records from a result.
 exports.many = structure => ({ records }) =>
-  records.map(record => format(structure, record))
+  records.map(record => format(
+    structure, record.toObject()))
 
 // Return a node from each record within a result.
 exports.column = structure => ({ records }) =>
-  records.map(record => {
+  records.map(x => x.toObject()).map(record => {
     for (const key in record)
       return structure(record[key])
   })
