@@ -1,6 +1,6 @@
 {
   "name": "neopreen",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A set of functions for formatting `neo4j-driver` results.",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "neo4j",
     "format"
   ],
-  "author": "Tom Harding <tomjharding@live.co.uk> (http://tjh.io/)",
+  "author": "Tom Harding <tomjharding@live.co.uk> (http://tomharding.me/)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/i-am-tom/neopreen/issues"
