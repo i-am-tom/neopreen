@@ -169,8 +169,42 @@ Promise.all([
   sess.run(`RETURN { x: 3 } AS x`)
       .then(np.one(np.object({ x: np.int })))
       .then(xs => assert.deepEqual(
-        xs, { x: 3 }, 'Object'))
+        xs, { x: 3 }, 'Object')),
+
+  // SHOULD ACCEPT 0 AS A VALUE (AND NOT FALSE/NULL/UNDEFINED)
+  //    Only applies to relations, nodes, records and objects
+  sess.run(` CREATE (person:Person { id: 0 })
+             CREATE (food:Item { counter: 0 })
+             CREATE (person)
+               -[relation:LIKES { amount: 0 }]
+               ->(food)
+             RETURN person, relation, { x: 0 } as object`)
+    .then(res => {
+      let cfg = {
+        person: np.node({id: np.int}),
+        relation: np.relation({amount: np.int}),
+        object: np.object({x: np.int}),
+      }
+      return [
+        np.row(cfg)(res),
+        np.record(cfg)(res.records[0])
+      ]
+    })
+    .then(([row, record]) => {
+      assert.strictEqual(row.person.id, 0, '0 on row Node')
+      assert.strictEqual(row.relation.amount, 0, '0 on row Relation')
+      assert.strictEqual(row.object.x, 0, '0 on row Object')
+
+      assert.strictEqual(record.person.id, 0, '0 on record Node')
+      assert.strictEqual(record.relation.amount, 0, '0 on record Relation')
+      assert.strictEqual(record.object.x, 0, '0 on record Object')
+    })
 ])
+.then(_ => sess.run(
+  `MATCH (n:Person)
+   WHERE n:Person OR n:food
+   OPTIONAL MATCH (n)-[r]-() 
+   DELETE n,r`))
 .then(_ => sess.close())
 .then(_ => conn.close())
 .catch(e => {
