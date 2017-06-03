@@ -3,8 +3,9 @@
 const format = (structure, data) =>
   Object.keys(structure).reduce(
     (acc, key) => Object.assign({}, acc,
-      { [key]: data[key] ? structure[key](data[key])
-                         : null }),
+      { [key]: (data[key] !== undefined && data[key] !== null)
+                  ? structure[key](data[key])
+                  : null }),
     {})
 
 // Given a node, format its contents according to a given structure,
