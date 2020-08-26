@@ -18,7 +18,7 @@ const preen = np.row({
 
   food: np.node({
     name: np.string,
-    litres: np.real
+    litres: np.float
   }),
 
   relation: np.relation({
